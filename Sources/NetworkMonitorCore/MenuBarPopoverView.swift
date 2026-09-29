@@ -276,9 +276,13 @@ public enum PopoverMetrics {
     /// Width of a bar at 100%.
     ///
     /// One value for every row, indented or not, so a child's bar is directly
-    /// comparable with its parent's — and small enough that the byte figure
-    /// following it still fits on the most indented row.
-    public static let maxBarWidth: CGFloat = 150
+    /// comparable with its parent's — and small enough that both directional
+    /// figures still fit on the most indented row.
+    public static let maxBarWidth: CGFloat = 72
+    /// Fixed width for each download/upload figure in a row.
+    public static let directionMetricWidth: CGFloat = 66
+    /// Spacing between the bar and the first metric, and between metrics.
+    public static let directionMetricSpacing: CGFloat = 6
     /// A row with a real but tiny share still gets a visible mark, rather than
     /// rounding away to nothing and reading as zero.
     public static let minBarWidth: CGFloat = 3
@@ -439,15 +443,12 @@ private struct AppRowView: View {
                     Spacer(minLength: 0)
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: PopoverMetrics.directionMetricSpacing) {
                     bar
-                    Text(ByteFormat.bytes(row.total))
-                        .font(.system(size: indented ? PopoverMetrics.childTotalFontSize
-                                                     : PopoverMetrics.totalFontSize,
-                                      weight: .medium))
-                        .monospacedDigit()
-                        .foregroundStyle(isMuted ? AnyShapeStyle(.secondary)
-                                                 : AnyShapeStyle(.primary))
+                    directionalMetric(symbol: "↓", label: "Download",
+                                      bytes: row.aggregateBytesIn)
+                    directionalMetric(symbol: "↑", label: "Upload",
+                                      bytes: row.aggregateBytesOut)
                     Spacer(minLength: 0)
                 }
             }
@@ -493,6 +494,20 @@ private struct AppRowView: View {
             .fill(Color.accentColor.opacity(isMuted ? 0.5 : 1))
             .frame(width: barWidth, height: PopoverMetrics.barHeight)
             .animation(.easeOut(duration: 0.45), value: barWidth)
+    }
+
+    /// Fixed-width directional figures keep every row aligned while making the
+    /// two components of the app's total visible at a glance.
+    private func directionalMetric(symbol: String, label: String, bytes: Int64) -> some View {
+        Text("\(symbol) \(ByteFormat.bytes(bytes))")
+            .font(.system(size: indented ? PopoverMetrics.childTotalFontSize
+                                         : PopoverMetrics.totalFontSize,
+                          weight: .medium))
+            .monospacedDigit()
+            .foregroundStyle(isMuted ? AnyShapeStyle(.secondary)
+                                     : AnyShapeStyle(.primary))
+            .frame(width: PopoverMetrics.directionMetricWidth, alignment: .leading)
+            .accessibilityLabel("\(label) \(ByteFormat.bytes(bytes))")
     }
 
     private var barWidth: CGFloat {

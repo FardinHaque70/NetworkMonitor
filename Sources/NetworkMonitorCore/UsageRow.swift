@@ -19,12 +19,26 @@ public struct UsageRow: Identifiable, Equatable {
     /// Bytes billed to this process alone.
     public var ownTotal: Int64 { bytesIn + bytesOut }
 
+    /// Download bytes represented by this row, including every child process.
+    ///
+    /// `bytesIn` remains the process's own internet traffic. The aggregate is
+    /// what the collapsed app row displays so its two directional figures
+    /// reconcile with the combined total and the expanded children.
+    public var aggregateBytesIn: Int64 {
+        bytesIn + children.reduce(0) { $0 + $1.aggregateBytesIn }
+    }
+
+    /// Upload bytes represented by this row, including every child process.
+    public var aggregateBytesOut: Int64 {
+        bytesOut + children.reduce(0) { $0 + $1.aggregateBytesOut }
+    }
+
     /// What the row displays: this app and everything it started.
     ///
     /// Combined rather than own-only so the visible rows still sum to the
     /// headline. A child's bytes have to be counted exactly once, and counting
     /// them in the parent is what lets the breakdown stay hidden by default.
-    public var total: Int64 { ownTotal + children.reduce(0) { $0 + $1.total } }
+    public var total: Int64 { aggregateBytesIn + aggregateBytesOut }
 
     public var hasChildren: Bool { !children.isEmpty }
 

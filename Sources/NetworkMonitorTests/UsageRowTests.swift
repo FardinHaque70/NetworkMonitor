@@ -37,6 +37,13 @@ func runUsageRowPartitionTests() {
 
             Check.expectEqual(result.systemTotal, 100)
             Check.expectEqual(result.system.count, 2)
+
+            let summary = UsageRow(id: "\u{1}system", displayName: "System",
+                                   bytesIn: 0, bytesOut: 0, bundlePath: nil,
+                                   isSystem: true, isActive: false,
+                                   children: result.system)
+            Check.expectEqual(summary.aggregateBytesIn, 70)
+            Check.expectEqual(summary.aggregateBytesOut, 30)
         }
 
         Check.test("both lists are sorted biggest first") {
@@ -75,6 +82,8 @@ func runUsageRowPartitionTests() {
             }
             Check.expectEqual(chrome.bytesIn, 500)
             Check.expectEqual(chrome.bytesOut, 100)
+            Check.expectEqual(chrome.aggregateBytesIn, 500)
+            Check.expectEqual(chrome.aggregateBytesOut, 100)
             Check.expectEqual(chrome.total, 600)
             Check.expectEqual(chrome.displayName, "Chrome")
             Check.expectEqual(chrome.bundlePath, "/Applications/Chrome.app")
@@ -124,6 +133,8 @@ func runUsageRowPartitionTests() {
                 return Check.expectNotNil(result.apps.first, "no parent row built")
             }
             Check.expectEqual(parent.ownTotal, 25)
+            Check.expectEqual(parent.aggregateBytesIn, 995)
+            Check.expectEqual(parent.aggregateBytesOut, 5)
             Check.expectEqual(parent.total, 1000)
             Check.expectEqual(parent.children.map(\.displayName), ["claude", "node"])
         }
@@ -197,6 +208,25 @@ func runUsageRowPartitionTests() {
             // 100 + 200 + … + 1000
             Check.expectEqual(result.apps.first?.total, 5500)
             Check.expectEqual(result.apps.first?.children.last?.total, 5500 - 1000 - 900 - 800)
+        }
+
+        Check.test("the rolled-up directional totals are preserved exactly") {
+            var apps: [String: AppTotals] = [:]
+            for i in 1...10 {
+                apps["vscode\u{1}p\(i)"] = AppTotals(
+                    displayName: "p\(i)", bundlePath: nil, isSystem: false,
+                    parent: code, bytesIn: Int64(i) * 100,
+                    bytesOut: Int64(i) * 10)
+            }
+            let result = UsageRow.partition(apps: apps, lastActivity: [:], now: Date())
+
+            guard let parent = result.apps.first else {
+                return Check.expectNotNil(result.apps.first, "no parent row built")
+            }
+            Check.expectEqual(parent.aggregateBytesIn, 5500)
+            Check.expectEqual(parent.aggregateBytesOut, 550)
+            Check.expectEqual(parent.children.last?.aggregateBytesIn, 2800)
+            Check.expectEqual(parent.children.last?.aggregateBytesOut, 280)
         }
 
         Check.test("a short list is left alone rather than rolled up") {

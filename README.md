@@ -32,8 +32,9 @@ today's total and a per-app breakdown of who used it.
 - **Live speed in the menu bar** — download and upload on two lines, updated twice
   a second, at a fixed width so nothing jitters as the numbers change.
 - **See which apps are using your data** — sorted biggest first, with icons.
-  Chrome's dozen helper processes show as one *Google Chrome* row; OS daemons
-  collapse into a single *System* row.
+  Each row separates internet download and upload amounts. Chrome's dozen helper
+  processes show as one *Google Chrome* row; OS daemons collapse into a single
+  *System* row.
 - **A total per connection** — join a different Wi-Fi network or hotspot and the
   totals start from zero, so what you see is what *this* connection has used. Open
   your hotspot somewhere new and you know exactly what each app spent on it. A
@@ -177,6 +178,12 @@ every second for the freshest possible numbers; **on battery**, every three seco
 Your totals are identical either way — the tool reports the bytes moved *between*
 samples, so sampling less often changes how fresh the figures are, not how complete.
 Settings tells you which mode is in force.
+
+Each app row shows cumulative internet download and upload bytes separately. The
+figures use the same counting window as the connection total — since you joined
+the current network, reset the counter, or crossed midnight — and include helper
+processes grouped under their parent app. LAN traffic is excluded by the same
+rules as the connection total.
 
 So there is nothing left worth switching off, and nothing to trade. Per-app rows
 still won't quite add up to the connection total: some traffic is wire-level

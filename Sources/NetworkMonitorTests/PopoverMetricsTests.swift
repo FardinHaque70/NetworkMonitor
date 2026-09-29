@@ -163,15 +163,22 @@ func runPopoverMetricsTests() {
             Check.expectTrue(PopoverMetrics.childTotalFontSize < PopoverMetrics.totalFontSize)
         }
 
-        /// The bar plus the figure after it plus every inset has to fit the
-        /// popover's 320 pt, at the deepest indent, or a long total is clipped.
-        Check.test("a full-width bar still fits the most indented row") {
+        /// The bar plus both directional figures plus every inset has to fit
+        /// the popover's 320 pt, at the deepest indent, or a value is clipped.
+        Check.test("directional metrics fit the most indented row") {
             let used = PopoverMetrics.rowHorizontalPadding * 2
                 + PopoverMetrics.childIndent
                 + PopoverMetrics.childIconSize
                 + PopoverMetrics.iconSpacing * 2
                 + PopoverMetrics.detailWidth
             Check.expectTrue(used <= 320, "row uses \(used) of 320")
+
+            let metricWidth = PopoverMetrics.maxBarWidth
+                + PopoverMetrics.directionMetricSpacing * 2
+                + PopoverMetrics.directionMetricWidth * 2
+            Check.expectEqual(metricWidth, 216)
+            Check.expectTrue(metricWidth <= PopoverMetrics.detailWidth,
+                             "metrics use \(metricWidth) of \(PopoverMetrics.detailWidth)")
         }
     }
 
