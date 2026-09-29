@@ -163,22 +163,21 @@ func runPopoverMetricsTests() {
             Check.expectTrue(PopoverMetrics.childTotalFontSize < PopoverMetrics.totalFontSize)
         }
 
-        /// The bar plus both directional figures plus every inset has to fit
-        /// the popover's 320 pt, at the deepest indent, or a value is clipped.
-        Check.test("directional metrics fit the most indented row") {
-            let used = PopoverMetrics.rowHorizontalPadding * 2
-                + PopoverMetrics.childIndent
-                + PopoverMetrics.childIconSize
-                + PopoverMetrics.iconSpacing * 2
-                + PopoverMetrics.detailWidth
-            Check.expectTrue(used <= 320, "row uses \(used) of 320")
-
-            let metricWidth = PopoverMetrics.maxBarWidth
-                + PopoverMetrics.directionMetricSpacing * 2
+        /// The app identity, download and upload columns plus both insets have
+        /// to fit the popover's 320 pt width at either row level.
+        Check.test("three row columns fit the popover") {
+            let columns = PopoverMetrics.leftColumnWidth
+                + PopoverMetrics.columnSpacing * 2
                 + PopoverMetrics.directionMetricWidth * 2
-            Check.expectEqual(metricWidth, 216)
-            Check.expectTrue(metricWidth <= PopoverMetrics.detailWidth,
-                             "metrics use \(metricWidth) of \(PopoverMetrics.detailWidth)")
+            Check.expectEqual(columns, 296)
+            Check.expectEqual(columns + PopoverMetrics.rowHorizontalPadding * 2, 320)
+
+            let childIdentity = PopoverMetrics.childIndent
+                + PopoverMetrics.childIconSize
+                + PopoverMetrics.iconSpacing
+                + PopoverMetrics.maxBarWidth
+            Check.expectTrue(childIdentity <= PopoverMetrics.leftColumnWidth,
+                             "child identity uses \(childIdentity) of \(PopoverMetrics.leftColumnWidth)")
         }
     }
 

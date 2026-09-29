@@ -276,13 +276,12 @@ public enum PopoverMetrics {
     /// Width of a bar at 100%.
     ///
     /// One value for every row, indented or not, so a child's bar is directly
-    /// comparable with its parent's — and small enough that both directional
-    /// figures still fit on the most indented row.
-    public static let maxBarWidth: CGFloat = 72
+    /// comparable with its parent's and stays inside the app column.
+    public static let maxBarWidth: CGFloat = 84
     /// Fixed width for each download/upload figure in a row.
     public static let directionMetricWidth: CGFloat = 66
-    /// Spacing between the bar and the first metric, and between metrics.
-    public static let directionMetricSpacing: CGFloat = 6
+    /// Gap between the three row columns.
+    public static let columnSpacing: CGFloat = 8
     /// A row with a real but tiny share still gets a visible mark, rather than
     /// rounding away to nothing and reading as zero.
     public static let minBarWidth: CGFloat = 3
@@ -316,9 +315,9 @@ public enum PopoverMetrics {
     /// Gap between the icon and the name-over-bar stack.
     public static let iconSpacing: CGFloat = 10
 
-    /// Width of the name-over-bar stack, fixed so the bars all start at the same
-    /// x and a long app name truncates instead of shoving the row about.
-    public static let detailWidth: CGFloat = 220
+    /// Width of the app identity column. It contains the icon, name, bar and
+    /// disclosure affordance, leaving the other two columns aligned.
+    public static let leftColumnWidth: CGFloat = 148
 
     /// Tallest the list may grow before it scrolls instead.
     ///
@@ -416,60 +415,52 @@ private struct AppRowView: View {
     }
 
     private var content: some View {
-        HStack(spacing: PopoverMetrics.iconSpacing) {
-            if indented { Spacer().frame(width: PopoverMetrics.childIndent) }
-            Image(nsImage: icon)
-                .resizable()
-                .frame(width: PopoverMetrics.iconSize(indented: indented),
-                       height: PopoverMetrics.iconSize(indented: indented))
+        HStack(spacing: PopoverMetrics.columnSpacing) {
+            HStack(spacing: PopoverMetrics.iconSpacing) {
+                if indented { Spacer().frame(width: PopoverMetrics.childIndent) }
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: PopoverMetrics.iconSize(indented: indented),
+                           height: PopoverMetrics.iconSize(indented: indented))
 
-            // Name over bar, vertically centred against the icon.
-            VStack(alignment: .leading, spacing: PopoverMetrics.detailSpacing) {
-                HStack(spacing: 6) {
-                    Text(row.displayName)
-                        .font(.system(size: indented ? PopoverMetrics.childNameFontSize
-                                                     : PopoverMetrics.nameFontSize))
-                        // Dimmer than a top-level app: a child is a part of the
-                        // row above it, not a peer of the rows around it.
-                        .foregroundStyle(indented || isMuted
-                                         ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
-                        .lineLimit(1).truncationMode(.tail)
+                // App identity column: name and disclosure above the percentage bar.
+                VStack(alignment: .leading, spacing: PopoverMetrics.detailSpacing) {
+                    HStack(spacing: 6) {
+                        Text(row.displayName)
+                            .font(.system(size: indented ? PopoverMetrics.childNameFontSize
+                                                         : PopoverMetrics.nameFontSize))
+                            // Dimmer than a top-level app: a child is a part of the
+                            // row above it, not a peer of the rows around it.
+                            .foregroundStyle(indented || isMuted
+                                             ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                            .lineLimit(1).truncationMode(.tail)
 
-                    // Live indicator: moved bytes within the last 2 seconds.
-                    Circle()
-                        .fill(Color.accentColor)
-                        .frame(width: 5, height: 5)
-                        .opacity(row.isActive ? 1 : 0)
-                    Spacer(minLength: 0)
-                }
+                        // Live indicator: moved bytes within the last 2 seconds.
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 5, height: 5)
+                            .opacity(row.isActive ? 1 : 0)
+                        Spacer(minLength: 0)
 
-                HStack(spacing: PopoverMetrics.directionMetricSpacing) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                            .opacity(chevronOpacity)
+                            .frame(width: Self.chevronWidth)
+                    }
+
                     bar
-                    directionalMetric(symbol: "↓", label: "Download",
-                                      bytes: row.aggregateBytesIn)
-                    directionalMetric(symbol: "↑", label: "Upload",
-                                      bytes: row.aggregateBytesOut)
-                    Spacer(minLength: 0)
                 }
             }
-            // Held to the stack's own height and centred, so the name and the bar
-            // stay vertically centred on the icon beside them.
-            .frame(width: PopoverMetrics.detailWidth,
+            .frame(width: PopoverMetrics.leftColumnWidth,
                    height: PopoverMetrics.detailStackHeight(indented: indented),
                    alignment: .leading)
 
-            Spacer(minLength: 0)
-
-            // Faint at rest, full strength when pointed at or open. Only rows
-            // with something behind them get one, so the chevron doubles as the
-            // answer to "which of these can I open?" — invisible until hover,
-            // that question could only be answered by sweeping the whole list.
-            Image(systemName: "chevron.right")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                .opacity(chevronOpacity)
-                .frame(width: Self.chevronWidth)
+            directionalMetric(symbol: "↓", label: "Download",
+                              bytes: row.aggregateBytesIn)
+            directionalMetric(symbol: "↑", label: "Upload",
+                              bytes: row.aggregateBytesOut)
         }
         .frame(height: PopoverMetrics.rowContentHeight)
         .padding(.horizontal, PopoverMetrics.rowHorizontalPadding)
